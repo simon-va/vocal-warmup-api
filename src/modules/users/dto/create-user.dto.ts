@@ -1,20 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({
-    description: 'E-Mail-Adresse des Users',
-    example: 'max@example.com',
+    description: 'User-ID (UUID aus Supabase Auth)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @IsEmail()
-  email: string;
+  @IsUUID()
+  id: string;
 
   @ApiProperty({
-    description: 'Name des Users',
-    example: 'Max Mustermann',
+    description: 'Benutzername des Users',
+    example: 'maxmustermann',
     required: false,
   })
   @IsString()
   @IsOptional()
-  name?: string;
+  username?: string;
 }

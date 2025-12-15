@@ -1,26 +1,77 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { SupabaseService } from '../supabase/supabase.service';
+import { LoginUserDto } from './dto/login-user.dto';
+import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private supabaseService: SupabaseService,
+  ) {}
 
-  async create(createUserDto: CreateUserDto) {
-    return this.prisma.user.create({
-      data: createUserDto,
+  async register(registerUserDto: RegisterUserDto) {
+    const { email, password, username } = registerUserDto;
+
+    // 1. User in Supabase Auth erstellen
+    const { data: authData, error: authError } = await this.supabaseService
+      .getClient()
+      .auth.signUp({
+        email,
+        password,
+      });
+
+    if (authError) {
+      if (authError.message.includes('already registered')) {
+        throw new ConflictException('E-Mail-Adresse bereits registriert');
+      }
+      throw new ConflictException(`1, ${authError.message}`);
+    }
+
+    if (!authData.user) {
+      throw new ConflictException('User konnte nicht erstellt werden');
+    }
+
+    // 2. User in public.users Tabelle erstellen
+    const user = await this.prisma.user.create({
+      data: {
+        id: authData.user.id,
+        username,
+      },
     });
+
+    return {
+      user,
+      session: authData.session,
+    };
   }
 
-  async findAll() {
-    return this.prisma.user.findMany();
-  }
+  async login(loginUserDto: LoginUserDto) {
+    const { email, password } = loginUserDto;
 
-  async findOne(id: string) {
-    return this.prisma.user.findUnique({
-      where: { id },
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .auth.signInWithPassword({
+        email,
+        password,
+      });
+
+    if (error) {
+      console.log(error)
+      throw new UnauthorizedException('Ungültige Anmeldedaten');
+    }
+
+    // User-Daten aus public.users holen
+    const user = await this.prisma.user.findUnique({
+      where: { id: data.user.id },
     });
+
+    return {
+      access_token: data.session.access_token,
+      user,
+    };
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
