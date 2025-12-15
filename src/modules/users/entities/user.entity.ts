@@ -15,6 +15,13 @@ export class User {
   username: string | null;
 
   @ApiProperty({
+    description: 'URL zum Avatar-Bild des Users',
+    example: 'https://your-project.supabase.co/storage/v1/object/public/avatars/user-123.jpg',
+    nullable: true,
+  })
+  avatarUrl: string | null;
+
+  @ApiProperty({
     description: 'Zeitpunkt der Erstellung',
     example: '2025-12-14T10:30:00.000Z',
   })
