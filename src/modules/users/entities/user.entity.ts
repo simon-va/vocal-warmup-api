@@ -8,17 +8,11 @@ export class User {
   id: string;
 
   @ApiProperty({
-    description: 'E-Mail-Adresse des Users',
-    example: 'max@example.com',
-  })
-  email: string;
-
-  @ApiProperty({
-    description: 'Name des Users',
-    example: 'Max Mustermann',
+    description: 'Benutzername des Users',
+    example: 'maxmustermann',
     nullable: true,
   })
-  name: string | null;
+  username: string | null;
 
   @ApiProperty({
     description: 'Zeitpunkt der Erstellung',

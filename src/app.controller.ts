@@ -1,6 +1,8 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { AppService } from './app.service';
+import { CurrentUser } from './common/decorators/current-user.decorator';
+import { SupabaseAuthGuard } from './common/guards/supabase-auth.guard';
 import { HealthResponseDto } from './dto/health-response.dto';
 
 @Controller()
@@ -17,7 +19,10 @@ export class AppController {
       example: 'Hello World!'
     }
   })
-  getHello(): string {
+  @UseGuards(SupabaseAuthGuard)
+  getHello(@CurrentUser() user: any): string {
+    console.log(user);
+
     return this.appService.getHello();
   }
 
