@@ -8,14 +8,12 @@ export class StorageService {
   async uploadAvatar(
     userId: string,
     file: Express.Multer.File,
-  ): Promise<string> {
-    const fileExt = file.originalname.split('.').pop();
-    const fileName = `${userId}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
+  ): Promise<void> {
+    const filePath = `avatars/${userId}`;
 
     const { error: uploadError } = await this.supabaseService
       .getAdminClient()
-      .storage.from('avatars')
+      .storage.from('public-bucket')
       .upload(filePath, file.buffer, {
         contentType: file.mimetype,
         upsert: true,
@@ -24,30 +22,23 @@ export class StorageService {
     if (uploadError) {
       throw new Error(`Upload fehlgeschlagen: ${uploadError.message}`);
     }
-
-    const { data } = this.supabaseService
-      .getAdminClient()
-      .storage.from('avatars')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
   }
 
-  async deleteAvatar(avatarUrl: string): Promise<void> {
-    // Extrahiere den Dateinamen aus der URL
-    // URL Format: https://.../storage/v1/object/public/avatars/userid.jpg
-    const urlParts = avatarUrl.split('/avatars/');
-    if (urlParts.length < 2) return;
+  async getAvatar(userId: string): Promise<{ data: Blob; contentType: string } | null> {
+    const filePath = `avatars/${userId}`;
 
-    const fileName = urlParts[1]; // nur der Dateiname (z.B. userid.jpg)
-
-    const { error } = await this.supabaseService
+    const { data, error } = await this.supabaseService
       .getAdminClient()
-      .storage.from('avatars')
-      .remove([fileName]);
+      .storage.from('public-bucket')
+      .download(filePath);
 
     if (error) {
-      throw new Error(`Löschen fehlgeschlagen: ${error.message}`);
+      return null;
     }
+
+    return {
+      data,
+      contentType: data.type,
+    };
   }
 }
