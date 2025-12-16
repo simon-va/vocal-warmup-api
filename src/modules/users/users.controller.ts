@@ -8,10 +8,15 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards
+  UploadedFile,
+  UseGuards,
+  UseInterceptors
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -19,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SupabaseAuthGuard } from '../../common/guards/supabase-auth.guard';
+import { UploadAvatarResponseDto } from '../storage/dto/upload-avatar-response.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -119,5 +125,52 @@ export class UsersController {
       );
     }
     return this.usersService.remove(id);
+  }
+
+  @Post(':id/avatar')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Avatar-Bild hochladen' })
+  @ApiParam({
+    name: 'id',
+    description: 'User-ID (UUID)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Avatar-Bilddatei (JPG, PNG, etc.)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Avatar wurde erfolgreich hochgeladen',
+    type: UploadAvatarResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Keine Berechtigung',
+  })
+  async uploadAvatar(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() currentUser: any,
+  ) {
+    if (currentUser.id !== id) {
+      throw new ForbiddenException(
+        'Sie können nur Ihr eigenes Avatar-Bild hochladen',
+      );
+    }
+
+    const user = await this.usersService.uploadAvatar(id, file);
+    return { avatarUrl: user.avatarUrl };
   }
 }

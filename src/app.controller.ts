@@ -1,5 +1,6 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { AppService } from './app.service';
 import { CurrentUser } from './common/decorators/current-user.decorator';
 import { SupabaseAuthGuard } from './common/guards/supabase-auth.guard';
@@ -33,6 +34,7 @@ export class AppController {
     description: 'Gibt den Status der Anwendung zurück',
     type: HealthResponseDto
   })
+  @SkipThrottle()
   getHealth(): HealthResponseDto {
     return {
       status: 'ok',

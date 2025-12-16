@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -10,6 +11,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private supabaseService: SupabaseService,
+    private storageService: StorageService,
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
@@ -84,6 +86,31 @@ export class UsersService {
   async remove(id: string) {
     return this.prisma.user.delete({
       where: { id },
+    });
+  }
+
+  async uploadAvatar(userId: string, file: Express.Multer.File) {
+    // Altes Avatar-Bild löschen, falls vorhanden (wichtig bei Formatwechsel z.B. jpg → png)
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (user?.avatarUrl) {
+      try {
+        await this.storageService.deleteAvatar(user.avatarUrl);
+      } catch (error) {
+        // Fehler beim Löschen ignorieren (z.B. falls Datei bereits gelöscht)
+        console.error('Fehler beim Löschen des alten Avatars:', error);
+      }
+    }
+
+    // Neues Avatar-Bild hochladen
+    const avatarUrl = await this.storageService.uploadAvatar(userId, file);
+
+    // Avatar-URL in der Datenbank aktualisieren
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
     });
   }
 }
