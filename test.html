@@ -50,6 +50,8 @@
         }
 
         input[type="text"],
+        input[type="email"],
+        input[type="password"],
         input[type="file"] {
             width: 100%;
             padding: 12px;
@@ -60,6 +62,8 @@
         }
 
         input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
         input[type="file"]:focus {
             outline: none;
             border-color: #667eea;
@@ -113,10 +117,22 @@
             border: 1px solid #f5c6cb;
         }
 
+        .response.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
         .loading {
             text-align: center;
             color: #667eea;
             font-weight: 500;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 30px 0;
         }
     </style>
 </head>
@@ -126,15 +142,42 @@
         
         <form id="uploadForm">
             <div class="form-group">
-                <label for="token">Bearer Token:</label>
+                <label for="baseUrl">Base URL:</label>
                 <input 
                     type="text" 
-                    id="token" 
-                    name="token" 
-                    placeholder="Dein JWT Token eingeben..." 
+                    id="baseUrl" 
+                    name="baseUrl" 
+                    placeholder="z.B. http://localhost:3000"
+                    value="http://localhost:3000"
                     required
                 >
             </div>
+
+            <div class="divider"></div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    placeholder="max@example.com" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Passwort:</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Dein Passwort" 
+                    required
+                >
+            </div>
+
+            <div class="divider"></div>
 
             <div class="form-group">
                 <label for="file">Avatar-Bild auswählen:</label>
@@ -147,7 +190,7 @@
                 >
             </div>
 
-            <button type="submit" id="submitBtn">Avatar hochladen</button>
+            <button type="submit" id="submitBtn">Login & Avatar hochladen</button>
         </form>
 
         <div id="response"></div>
@@ -161,37 +204,65 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const token = document.getElementById('token').value;
+            const baseUrl = document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
             const fileInput = document.getElementById('file');
             const file = fileInput.files[0];
 
-            if (!token || !file) {
-                showResponse('Bitte Token und Datei eingeben!', 'error');
+            if (!baseUrl || !email || !password || !file) {
+                showResponse('Bitte alle Felder ausfüllen!', 'error');
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('file', file);
-
             submitBtn.disabled = true;
-            showResponse('Upload läuft...', 'loading');
+            showResponse('🔐 Login läuft...', 'info');
 
             try {
-                const response = await fetch('http://localhost:3000/users/4c9666a4-e8f9-4195-904f-b75f934a2d10/avatar', {
+                // Schritt 1: Login
+                const loginResponse = await fetch(`${baseUrl}/users/login`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (!loginResponse.ok) {
+                    const errorData = await loginResponse.json();
+                    showResponse(`❌ Login fehlgeschlagen: ${errorData.message || 'Ungültige Anmeldedaten'}`, 'error');
+                    return;
+                }
+
+                const loginData = await loginResponse.json();
+                const { access_token, user } = loginData;
+
+                if (!access_token || !user || !user.id) {
+                    showResponse('❌ Fehler: Keine Token oder User-ID erhalten', 'error');
+                    return;
+                }
+
+                showResponse('✅ Login erfolgreich! 📤 Avatar-Upload läuft...', 'info');
+
+                // Schritt 2: Avatar Upload
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const uploadResponse = await fetch(`${baseUrl}/users/${user.id}/avatar`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${access_token}`
                     },
                     body: formData
                 });
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    showResponse(`✅ Erfolg! Avatar URL: ${data.avatarUrl}`, 'success');
+                if (uploadResponse.status === 204 || uploadResponse.ok) {
+                    showResponse('✅ Avatar erfolgreich hochgeladen!', 'success');
                 } else {
-                    showResponse(`❌ Fehler: ${data.message || 'Upload fehlgeschlagen'}`, 'error');
+                    const errorData = await uploadResponse.json().catch(() => ({}));
+                    showResponse(`❌ Upload fehlgeschlagen: ${errorData.message || 'Unbekannter Fehler'}`, 'error');
                 }
+
             } catch (error) {
                 showResponse(`❌ Fehler: ${error.message}`, 'error');
             } finally {

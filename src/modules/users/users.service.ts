@@ -65,7 +65,6 @@ export class UsersService {
       throw new UnauthorizedException('Ungültige Anmeldedaten');
     }
 
-    // User-Daten aus public.users holen
     const user = await this.prisma.user.findUnique({
       where: { id: data.user.id },
     });
@@ -90,27 +89,10 @@ export class UsersService {
   }
 
   async uploadAvatar(userId: string, file: Express.Multer.File) {
-    // Altes Avatar-Bild löschen, falls vorhanden (wichtig bei Formatwechsel z.B. jpg → png)
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    await this.storageService.uploadAvatar(userId, file);
+  }
 
-    if (user?.avatarUrl) {
-      try {
-        await this.storageService.deleteAvatar(user.avatarUrl);
-      } catch (error) {
-        // Fehler beim Löschen ignorieren (z.B. falls Datei bereits gelöscht)
-        console.error('Fehler beim Löschen des alten Avatars:', error);
-      }
-    }
-
-    // Neues Avatar-Bild hochladen
-    const avatarUrl = await this.storageService.uploadAvatar(userId, file);
-
-    // Avatar-URL in der Datenbank aktualisieren
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { avatarUrl },
-    });
+  async getAvatar(userId: string) {
+    return this.storageService.getAvatar(userId);
   }
 }
