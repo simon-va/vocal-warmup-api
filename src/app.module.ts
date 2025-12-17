@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { minutes, ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
 import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -24,6 +25,7 @@ import { PrismaModule } from './prisma/prisma.module';
     SupabaseModule,
     PrismaModule,
     UsersModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [
