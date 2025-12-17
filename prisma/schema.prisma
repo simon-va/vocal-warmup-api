@@ -18,3 +18,79 @@ model User {
 
   @@map("users")
 }
+
+model Category {
+  id          Int            @id @default(autoincrement())
+  name        String         @unique @db.VarChar(50)
+  displayName String         @map("display_name") @db.VarChar(100)
+  sortOrder   Int            @map("sort_order")
+  weight      Int
+  createdAt   DateTime       @default(now()) @map("created_at")
+  
+  subcategories Subcategory[]
+  exercises     Exercise[]
+
+  @@map("categories")
+}
+
+model Subcategory {
+  id          Int      @id @default(autoincrement())
+  categoryId  Int      @map("category_id")
+  name        String   @db.VarChar(50)
+  displayName String   @map("display_name") @db.VarChar(100)
+  sortOrder   Int      @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  category  Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  exercises Exercise[]
+
+  @@unique([categoryId, name])
+  @@index([categoryId])
+  @@map("subcategories")
+}
+
+model VoiceType {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(20)
+  displayName String   @map("display_name") @db.VarChar(50)
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  exercises ExerciseVoiceType[]
+
+  @@map("voice_types")
+}
+
+model Exercise {
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar(200)
+  categoryId    Int       @map("category_id")
+  subcategoryId Int       @map("subcategory_id")
+  level         Int?
+  duration      Int
+  instruction   String?   @db.Text
+  hasVideo      Boolean   @default(false) @map("has_video")
+  hasAudio      Boolean   @default(false) @map("has_audio")
+  hasImage      Boolean   @default(false) @map("has_image")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  category      Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  subcategory   Subcategory         @relation(fields: [subcategoryId], references: [id], onDelete: Restrict)
+  voiceTypes    ExerciseVoiceType[]
+
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([level])
+  @@map("exercises")
+}
+
+model ExerciseVoiceType {
+  exerciseId  Int @map("exercise_id")
+  voiceTypeId Int @map("voice_type_id")
+  
+  exercise  Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  voiceType VoiceType @relation(fields: [voiceTypeId], references: [id], onDelete: Cascade)
+
+  @@id([exerciseId, voiceTypeId])
+  @@map("exercise_voice_types")
+}
