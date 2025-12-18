@@ -7,24 +7,34 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { AdminGuard } from '../../common/guards/admin.guard';
+import { SupabaseAuthGuard } from '../../common/guards/supabase-auth.guard';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { Exercise } from './entities/exercise.entity';
 import { ExercisesService } from './exercises.service';
 
 @ApiTags('exercises')
+@ApiBearerAuth('JWT-auth')
+@ApiUnauthorizedResponse({ description: 'Unauthorized' })
 @Controller('exercises')
 export class ExercisesController {
   constructor(private readonly exercisesService: ExercisesService) {}
 
   @Post()
+  @UseGuards(SupabaseAuthGuard, AdminGuard)
+  @ApiForbiddenResponse({ description: 'Admin rights required' })
   @ApiOperation({ summary: 'Neue Übung erstellen' })
   @ApiResponse({
     status: 201,
@@ -40,6 +50,7 @@ export class ExercisesController {
   }
 
   @Get()
+  @UseGuards(SupabaseAuthGuard)
   @ApiOperation({ summary: 'Alle Übungen abrufen' })
   @ApiResponse({
     status: 200,
@@ -51,6 +62,8 @@ export class ExercisesController {
   }
 
   @Patch(':id')
+  @UseGuards(SupabaseAuthGuard, AdminGuard)
+  @ApiForbiddenResponse({ description: 'Admin rights required' })
   @ApiOperation({ summary: 'Übung aktualisieren' })
   @ApiParam({
     name: 'id',
@@ -74,6 +87,8 @@ export class ExercisesController {
   }
 
   @Delete(':id')
+  @UseGuards(SupabaseAuthGuard, AdminGuard)
+  @ApiForbiddenResponse({ description: 'Admin rights required' })
   @ApiOperation({ summary: 'Übung löschen' })
   @ApiParam({
     name: 'id',

@@ -13,6 +13,7 @@ model User {
   id        String   @id @db.Uuid
   username  String?
   avatarUrl    String? @map("avatar_url")
+  isAdmin   Boolean  @default(false) @map("is_admin")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

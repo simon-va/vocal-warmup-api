@@ -1,16 +1,22 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiForbiddenResponse, ApiOperation, ApiParam, ApiResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { AdminGuard } from '../../common/guards/admin.guard';
+import { SupabaseAuthGuard } from '../../common/guards/supabase-auth.guard';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
 
 @ApiTags('categories')
+@ApiBearerAuth('JWT-auth')
+@ApiUnauthorizedResponse({ description: 'Unauthorized' })
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Post()
+  @UseGuards(SupabaseAuthGuard, AdminGuard)
+  @ApiForbiddenResponse({ description: 'Admin rights required' })
   @ApiOperation({ summary: 'Neue Kategorie erstellen' })
   @ApiResponse({
     status: 201,
@@ -26,6 +32,7 @@ export class CategoriesController {
   }
 
   @Get()
+  @UseGuards(SupabaseAuthGuard)
   @ApiOperation({ summary: 'Alle Kategorien abrufen' })
   @ApiResponse({
     status: 200,
@@ -37,6 +44,8 @@ export class CategoriesController {
   }
 
   @Patch(':id')
+  @UseGuards(SupabaseAuthGuard, AdminGuard)
+  @ApiForbiddenResponse({ description: 'Admin rights required' })
   @ApiOperation({ summary: 'Kategorie aktualisieren' })
   @ApiParam({
     name: 'id',

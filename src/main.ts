@@ -23,10 +23,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('NestJS API')
-    .setDescription('Die API Dokumentation für dein NestJS Backend')
+    .setTitle('Vocal Warmup Api')
     .setVersion('1.0')
-    .addTag('app', 'Allgemeine Endpunkte')
     .addBearerAuth(
       {
         type: 'http',

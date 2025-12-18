@@ -1,29 +1,39 @@
 import {
-    Body,
-    Controller,
-    Get,
-    Param,
-    ParseIntPipe,
-    Patch,
-    Post,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
 import {
-    ApiOperation,
-    ApiParam,
-    ApiResponse,
-    ApiTags,
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { AdminGuard } from '../../common/guards/admin.guard';
+import { SupabaseAuthGuard } from '../../common/guards/supabase-auth.guard';
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
 import { UpdateSubcategoryDto } from './dto/update-subcategory.dto';
 import { Subcategory } from './entities/subcategory.entity';
 import { SubcategoriesService } from './subcategories.service';
 
 @ApiTags('subcategories')
+@ApiBearerAuth('JWT-auth')
+@ApiUnauthorizedResponse({ description: 'Unauthorized' })
 @Controller('subcategories')
 export class SubcategoriesController {
   constructor(private readonly subcategoriesService: SubcategoriesService) {}
 
   @Post()
+  @UseGuards(SupabaseAuthGuard, AdminGuard)
+  @ApiForbiddenResponse({ description: 'Admin rights required' })
   @ApiOperation({ summary: 'Neue Unterkategorie erstellen' })
   @ApiResponse({
     status: 201,
@@ -46,6 +56,7 @@ export class SubcategoriesController {
   }
 
   @Get()
+  @UseGuards(SupabaseAuthGuard)
   @ApiOperation({ summary: 'Alle Unterkategorien abrufen' })
   @ApiResponse({
     status: 200,
@@ -57,6 +68,8 @@ export class SubcategoriesController {
   }
 
   @Patch(':id')
+  @UseGuards(SupabaseAuthGuard, AdminGuard)
+  @ApiForbiddenResponse({ description: 'Admin rights required' })
   @ApiOperation({ summary: 'Unterkategorie aktualisieren' })
   @ApiParam({
     name: 'id',
