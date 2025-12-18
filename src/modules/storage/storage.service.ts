@@ -86,4 +86,17 @@ export class StorageService {
       contentType: data.type,
     };
   }
+
+  async deleteExerciseMedia(folder: MediaFolder, exerciseId: string): Promise<void> {
+    const filePath = `${folder}/${exerciseId}`;
+
+    const { error } = await this.supabaseService
+      .getAdminClient()
+      .storage.from('exercise-media')
+      .remove([filePath]);
+
+    if (error) {
+      throw new Error(`Delete failed: ${error.message}`);
+    }
+  }
 }

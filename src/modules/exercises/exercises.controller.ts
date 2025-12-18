@@ -211,4 +211,50 @@ export class ExercisesController {
     const buffer = Buffer.from(await media.data.arrayBuffer());
     res.send(buffer);
   }
+
+  @Delete(':id/media/:folder')
+  @UseGuards(SupabaseAuthGuard, AdminGuard)
+  @ApiForbiddenResponse({ description: 'Admin rights required' })
+  @ApiOperation({ summary: 'Delete media file for an exercise' })
+  @ApiParam({
+    name: 'id',
+    description: 'Exercise ID',
+    example: 1,
+  })
+  @ApiParam({
+    name: 'folder',
+    description: 'Media folder (videos|audios|images)',
+    example: 'videos',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Media was successfully deleted',
+    type: Exercise,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Media not found',
+  })
+  async deleteMedia(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('folder') folder: MediaFolder,
+  ): Promise<Exercise> {
+    const exerciseId = id.toString();
+
+    const media = await this.storageService.getExerciseMedia(folder, exerciseId);
+
+    if (!media) {
+      throw new NotFoundException('Media not found');
+    }
+
+    await this.storageService.deleteExerciseMedia(folder, exerciseId);
+
+    const flags: { hasVideo?: boolean; hasAudio?: boolean; hasImage?: boolean } = {};
+
+    if (folder === 'videos') flags.hasVideo = false;
+    if (folder === 'audios') flags.hasAudio = false;
+    if (folder === 'images') flags.hasImage = false;
+
+    return this.exercisesService.updateMediaFlags(id, flags);
+  }
 }
