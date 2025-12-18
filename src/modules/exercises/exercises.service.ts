@@ -65,4 +65,19 @@ export class ExercisesService {
       throw error;
     }
   }
+
+  async updateMediaFlags(id: number, flags: { hasVideo?: boolean; hasAudio?: boolean; hasImage?: boolean; }): Promise<Exercise> {
+    try {
+      const exercise = await this.prisma.exercise.update({
+        where: { id },
+        data: flags,
+      });
+      return exercise;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException(`Exercise with ID ${id} not found`);
+      }
+      throw error;
+    }
+  }
 }
