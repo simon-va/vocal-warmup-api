@@ -29,7 +29,6 @@ model Category {
   createdAt   DateTime       @default(now()) @map("created_at")
   
   subcategories Subcategory[]
-  exercises     Exercise[]
 
   @@map("categories")
 }
@@ -64,8 +63,7 @@ model VoiceType {
 model Exercise {
   id            Int       @id @default(autoincrement())
   name          String    @db.VarChar(200)
-  categoryId    Int       @map("category_id")
-  subcategoryId Int?      @map("subcategory_id")
+  subcategoryId Int       @map("subcategory_id")
   level         Int?
   duration      Int
   instruction   String?   @db.Text
@@ -75,11 +73,8 @@ model Exercise {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   
-  category      Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  subcategory   Subcategory?         @relation(fields: [subcategoryId], references: [id], onDelete: Restrict)
+  subcategory   Subcategory          @relation(fields: [subcategoryId], references: [id], onDelete: Restrict)
   voiceTypes    ExerciseVoiceType[]
-
-  @@index([categoryId])
   @@index([subcategoryId])
   @@index([level])
   @@map("exercises")

@@ -22,21 +22,12 @@ export class CreateExerciseDto {
   name: string;
 
   @ApiProperty({
-    description: 'ID der Kategorie',
+    description: 'ID der Unterkategorie',
     example: 1,
   })
   @IsInt()
   @IsNotEmpty()
-  categoryId: number;
-
-  @ApiProperty({
-    description: 'ID der Unterkategorie',
-    example: 1,
-    required: false,
-  })
-  @IsInt()
-  @IsOptional()
-  subcategoryId?: number;
+  subcategoryId: number;
 
   @ApiProperty({
     description: 'Schwierigkeitsgrad der Übung',

@@ -14,17 +14,10 @@ export class Exercise {
   name: string;
 
   @ApiProperty({
-    description: 'ID der Kategorie',
-    example: 1,
-  })
-  categoryId: number;
-
-  @ApiProperty({
     description: 'ID der Unterkategorie',
     example: 1,
-    nullable: true,
   })
-  subcategoryId: number | null;
+  subcategoryId: number;
 
   @ApiProperty({
     description: 'Schwierigkeitsgrad der Übung (1 = Anfänger, 2 = Fortgeschritten)',

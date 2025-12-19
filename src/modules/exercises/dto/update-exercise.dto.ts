@@ -20,16 +20,6 @@ export class UpdateExerciseDto {
   @IsOptional()
   @MaxLength(200)
   name?: string;
-
-  @ApiProperty({
-    description: 'ID der Kategorie',
-    example: 1,
-    required: false,
-  })
-  @IsInt()
-  @IsOptional()
-  categoryId?: number;
-
   @ApiProperty({
     description: 'ID der Unterkategorie',
     example: 1,
